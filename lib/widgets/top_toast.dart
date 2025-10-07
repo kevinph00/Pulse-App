@@ -64,8 +64,8 @@ class _TopToastWidgetState extends State<_TopToastWidget>
   Widget build(BuildContext context) {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 10,
-      left: 20,
-      right: 20,
+      left: 30,
+      right: 30,
       child: SlideTransition(
         position: _animation,
         child: Material(
