@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:location/location.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:flutter/services.dart';
-import 'package:location/location.dart';
 
 import '../painters/compass_painter.dart';
-import '../services/location.dart';
+import '../services/location_service.dart';
 import '../widgets/pulse_button.dart';
 import '../widgets/track_button.dart';
 import '../widgets/compass_info.dart';
+import '../widgets/top_toast.dart';
 
 class CompassScreen extends StatefulWidget {
   const CompassScreen({super.key});
@@ -24,9 +25,11 @@ class _CompassScreenState extends State<CompassScreen>
   bool _isRefreshing = false;
   bool _isContinuous = false;
   Timer? _continuousTimer;
+  double _heading = 0;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  String? _trackingCoordinates;
 
   @override
   void initState() {
@@ -40,6 +43,13 @@ class _CompassScreenState extends State<CompassScreen>
     _pulseAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
     );
+
+    // Listen to compass heading continuously
+    FlutterCompass.events?.listen((event) {
+      setState(() {
+        _heading = event.heading ?? 0;
+      });
+    });
   }
 
   @override
@@ -80,22 +90,49 @@ class _CompassScreenState extends State<CompassScreen>
 
   void _copyCoordinates(double lat, double lon) {
     final coords = "${lat.toStringAsFixed(5)}, ${lon.toStringAsFixed(5)}";
-    Clipboard.setData(ClipboardData(text: coords));
+    TopToast.show(context, "📋 Copied: $coords");
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Copied: $coords'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(top: 20, left: 20, right: 20),
-        backgroundColor: Colors.black87,
-      ),
+  Future<void> _showTrackDialog() async {
+    final controller =
+        TextEditingController(text: _trackingCoordinates ?? "");
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Track Coordinates"),
+          content: TextField(
+            controller: controller,
+            decoration:
+                const InputDecoration(hintText: "Enter latitude, longitude"),
+            keyboardType: TextInputType.text,
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("Cancel")),
+            TextButton(
+                onPressed: () {
+                  final input = controller.text.trim();
+                  if (input.isEmpty) {
+                    _trackingCoordinates = null;
+                    TopToast.show(context, "Tracking reset");
+                  } else {
+                    _trackingCoordinates = input;
+                    TopToast.show(context, "Tracking: $input");
+                  }
+                  Navigator.of(context).pop();
+                },
+                child: const Text("OK")),
+          ],
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final heading = _locationData?.heading ?? 0;
     final lat = _locationData?.latitude ?? 0;
     final lon = _locationData?.longitude ?? 0;
     final alt = _locationData?.altitude ?? 0;
@@ -116,7 +153,7 @@ class _CompassScreenState extends State<CompassScreen>
             : Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Top bar with Pulse label and timestamp
+                  // Top bar
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -148,7 +185,7 @@ class _CompassScreenState extends State<CompassScreen>
                         alignment: Alignment.center,
                         children: [
                           Transform.rotate(
-                            angle: -(heading * math.pi / 180),
+                            angle: -(_heading * math.pi / 180),
                             child: CustomPaint(
                               size: const Size(300, 300),
                               painter: CompassPainter(),
@@ -172,9 +209,9 @@ class _CompassScreenState extends State<CompassScreen>
                     ),
                   ),
 
-                  // Compass info column
+                  // Compass info
                   CompassInfo(
-                    heading: heading,
+                    heading: _heading,
                     latitude: lat,
                     longitude: lon,
                     altitude: alt,
@@ -184,11 +221,7 @@ class _CompassScreenState extends State<CompassScreen>
                   // Track button
                   Padding(
                     padding: const EdgeInsets.only(bottom: 60, top: 8),
-                    child: TrackButton(
-                      onPressed: () {
-                        // TODO: Add track functionality
-                      },
-                    ),
+                    child: TrackButton(onPressed: _showTrackDialog),
                   ),
                 ],
               ),
