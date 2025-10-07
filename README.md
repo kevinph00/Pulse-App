@@ -38,19 +38,20 @@ No extra accounts. No map tiles. No heavy internet. Just **Pulse** and GPS.
  
 ## 📂 Project Structure
 
-lib/  
-├─ main.dart                        # App entry point  
-├─ screens/  
-│  └─ compass_screen.dart           # Main UI & app logic  
-├─ painters/  
-│  ├─ compass_painter.dart          # CustomPainter for compass  
-│  └─ tracking_arc_painter.dart     # CustomPainter for green arc  
-├─ widgets/  
-│  ├─ compass_info.dart             # Info-panel showing heading, distance, coordinates and altitude  
-│  ├─ pulse_button.dart             # Center button for refreshing location  
-│  ├─ top_toast.dart                # Lightweight top toast for copy feedback  
-│  └─ track_button.dart             # Bottom button for tracking on input coordinates  
-
+```text
+lib/
+├─ main.dart                        # App entry point
+├─ screens/
+│  └─ compass_screen.dart           # Main UI & app logic
+├─ painters/
+│  ├─ compass_painter.dart          # CustomPainter for compass
+│  └─ tracking_arc_painter.dart     # CustomPainter for green arc
+├─ widgets/
+│  ├─ compass_info.dart             # Info-panel showing heading, distance, coordinates and altitude
+│  ├─ pulse_button.dart             # Center button for refreshing location
+│  ├─ top_toast.dart                # Lightweight top toast for copy feedback
+│  └─ track_button.dart             # Bottom button for tracking on input coordinates
+```
 
 ---
 
@@ -72,11 +73,13 @@ lib/
 
 Add these to your pubspec.yaml:
 
-dependencies:  
-    flutter:  
-        sdk: flutter  
-    flutter_compass: ^0.7.0  
-    location: ^6.0.0  
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_compass: ^0.7.0
+  location: ^6.0.0
+```
 
 ---
 
