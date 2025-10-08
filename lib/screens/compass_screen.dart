@@ -283,10 +283,10 @@ class _CompassScreenState extends State<CompassScreen>
                             stream: FlutterCompass.events
                                 ?.map((e) => e.heading ?? 0),
                             builder: (context, snapshot) {
-                              final heading = snapshot.data ?? 0;
+                              final heading = (snapshot.data ?? 0 + 360) % 360;
 
                               // Update _heading for info panel
-                              _heading = (heading + 360) % 360;
+                              _heading = heading;
 
                               final rotation = -heading * (math.pi / 180);
 
