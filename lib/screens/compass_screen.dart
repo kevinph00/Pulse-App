@@ -11,6 +11,7 @@ import '../painters/tracking_arc_painter.dart';
 import '../widgets/pulse_button.dart';
 import '../widgets/track_button.dart';
 import '../widgets/top_toast.dart';
+import '../widgets/compass_info.dart';
 
 class CompassScreen extends StatefulWidget {
   const CompassScreen({super.key});
@@ -131,16 +132,17 @@ class _CompassScreenState extends State<CompassScreen>
           decoration: const InputDecoration(
             hintText: "Enter or paste lat, lon",
             hintStyle: TextStyle(color: Colors.white54),
-            enabledBorder:
-                UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-            focusedBorder:
-                UnderlineInputBorder(borderSide: BorderSide(color: Colors.greenAccent)),
+            enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.greenAccent)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel", style: TextStyle(color: Colors.white70)),
+            child:
+                const Text("Cancel", style: TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () {
@@ -177,8 +179,8 @@ class _CompassScreenState extends State<CompassScreen>
               }
               Navigator.pop(context);
             },
-            child: const Text("Save",
-                style: TextStyle(color: Colors.greenAccent)),
+            child:
+                const Text("Save", style: TextStyle(color: Colors.greenAccent)),
           ),
         ],
       ),
@@ -188,7 +190,8 @@ class _CompassScreenState extends State<CompassScreen>
   double _degToRad(double deg) => deg * math.pi / 180.0;
   double _radToDeg(double rad) => rad * 180.0 / math.pi;
 
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+      double lat1, double lon1, double lat2, double lon2) {
     const earthRadius = 6371000;
     final dLat = _degToRad(lat2 - lat1);
     final dLon = _degToRad(lon2 - lon1);
@@ -247,8 +250,8 @@ class _CompassScreenState extends State<CompassScreen>
                 children: [
                   // Top bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -260,8 +263,8 @@ class _CompassScreenState extends State<CompassScreen>
                         Text(
                           timestamp != null
                               ? "${timestamp.hour.toString().padLeft(2, '0')}:"
-                                "${timestamp.minute.toString().padLeft(2, '0')}:"
-                                "${timestamp.second.toString().padLeft(2, '0')}"
+                                  "${timestamp.minute.toString().padLeft(2, '0')}:"
+                                  "${timestamp.second.toString().padLeft(2, '0')}"
                               : "--:--:--",
                           style: const TextStyle(
                               color: Colors.white, fontSize: 18),
@@ -281,27 +284,17 @@ class _CompassScreenState extends State<CompassScreen>
                                 ?.map((e) => e.heading ?? 0),
                             builder: (context, snapshot) {
                               final heading = snapshot.data ?? 0;
-                              _heading = heading;
 
-                              if (_targetLat != null &&
-                                  _targetLon != null &&
-                                  _locationData != null) {
-                                final lat1 = _locationData!.latitude ?? 0;
-                                final lon1 = _locationData!.longitude ?? 0;
-                                _targetBearing = _calculateBearing(
-                                    lat1, lon1, _targetLat!, _targetLon!);
-                                _distance = _calculateDistance(
-                                    lat1, lon1, _targetLat!, _targetLon!);
-                              }
+                              // Update _heading for info panel
+                              _heading = (heading + 360) % 360;
+
+                              final rotation = -heading * (math.pi / 180);
 
                               return Stack(
                                 alignment: Alignment.center,
                                 children: [
-                                  AnimatedRotation(
-                                    turns: -heading / 360,
-                                    duration:
-                                        const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
+                                  Transform.rotate(
+                                    angle: rotation,
                                     child: CustomPaint(
                                       size: const Size(300, 300),
                                       painter: CompassPainter(),
@@ -311,7 +304,7 @@ class _CompassScreenState extends State<CompassScreen>
                                     CustomPaint(
                                       size: const Size(300, 300),
                                       painter: TrackingArcPainter(
-                                        compassHeading: _heading,
+                                        compassHeading: heading,
                                         targetBearing: _targetBearing,
                                       ),
                                     ),
@@ -322,8 +315,7 @@ class _CompassScreenState extends State<CompassScreen>
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color:
-                                              Colors.black.withOpacity(0.45),
+                                          color: Colors.black.withOpacity(0.45),
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
@@ -341,6 +333,7 @@ class _CompassScreenState extends State<CompassScreen>
                               );
                             },
                           ),
+
                           // 👇 Only ONE pulse button at center
                           PulseButton(
                             isRefreshing: _isRefreshing,
@@ -363,31 +356,12 @@ class _CompassScreenState extends State<CompassScreen>
                   // Info panel + one TrackButton
                   Column(
                     children: [
-                      Text("${_heading.toStringAsFixed(0)}°",
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () => _copyCoordinates(lat, lon), // 👈 fixed
-                        child: Text(
-                          "${lat.toStringAsFixed(5)}  ${lon.toStringAsFixed(5)}",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
+                      CompassInfoPanel(
+                        heading: _heading,
+                        latitude: lat,
+                        longitude: lon,
+                        altitude: alt,
                       ),
-                      const SizedBox(height: 4),
-                      const Text("Location",
-                          style: TextStyle(color: Colors.white54)),
-                      Text("${alt.toStringAsFixed(2)} m",
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 16)),
-                      const Text("Altitude",
-                          style: TextStyle(color: Colors.white54)),
                       const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 60, top: 8),

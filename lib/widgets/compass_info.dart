@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import '../widgets/top_toast.dart';
+import 'package:flutter/services.dart'; // for Clipboard
 
-class CompassInfo extends StatelessWidget {
+class CompassInfoPanel extends StatelessWidget {
   final double heading;
   final double latitude;
   final double longitude;
   final double altitude;
-  final void Function(double, double) onCopyCoordinates;
 
-  const CompassInfo({
+  const CompassInfoPanel({
     super.key,
     required this.heading,
     required this.latitude,
     required this.longitude,
     required this.altitude,
-    required this.onCopyCoordinates,
   });
+
+  void _copyCoordinates(BuildContext context) {
+    final coords = "${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}";
+    Clipboard.setData(ClipboardData(text: coords));
+    TopToast.show(context, "Copied: $coords");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +31,7 @@ class CompassInfo extends StatelessWidget {
                 color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         GestureDetector(
-          onTap: () => onCopyCoordinates(latitude, longitude),
+          onTap: () => _copyCoordinates(context),
           child: Text(
             "${latitude.toStringAsFixed(5)}  ${longitude.toStringAsFixed(5)}",
             style: const TextStyle(
